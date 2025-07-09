@@ -1,0 +1,1473 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelpNow - On-Demand Emergency & Basic Services</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF8C00'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E" type="image/svg+xml">
+
+    <style>
+        /* --- HelpNow Branding Colors (Orange Palette) --- */
+        :root {
+            --primary-color: #FF8C00;
+            /* Deep Orange */
+            --primary-color-dark: #E67E22;
+            /* Darker orange for hover */
+            --accent-color: #E74C3C;
+            /* Retaining red for emergency */
+            --text-dark: #333333;
+            --text-light: #FFFFFF;
+            --background-light: #FFF8F0;
+            /* Light orange tint for sections */
+            --background-white: #FFFFFF;
+            --border-color: #DDDDDD;
+            --success-green: #2ECC71;
+            --error-red: #E74C3C;
+            --info-blue: #FFE0B2;
+            /* Light orange info background */
+            --info-blue-border: #FF8C00;
+            /* Primary orange border for info */
+        }
+        /* Basic Resets & Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            overflow-x: hidden;
+            /* Prevent horizontal scrolling */
+            width: 100%;
+        }
+        body {
+            font-family: -apple-system, BlinkMacMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--background-white);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            /* Default padding for medium/large screens */
+        }
+        a {
+            text-decoration: none;
+            color: var(--primary-color);
+        }
+        a:hover {
+            color: var(--primary-color-dark);
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        /* Application-wide Button Styles */
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-color-dark);
+        }
+        .btn-secondary {
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background-color: #E0E0E0;
+        }
+        .btn-emergency {
+            background-color: var(--accent-color);
+            /* Red for emergency */
+            color: var(--text-light);
+            font-size: 1.1rem;
+            padding: 15px 30px;
+        }
+        .btn-emergency:hover {
+            background-color: #C0392B;
+            /* Darker red */
+        }
+        /* Header Section Styles */
+        header {
+            background-color: var(--background-white);
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo a {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            /* Logo color */
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+        }
+        nav ul li {
+            margin-left: 30px;
+        }
+        nav ul li a {
+            color: var(--text-dark);
+            font-weight: 500;
+            position: relative;
+        }
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            left: 0;
+            bottom: -5px;
+            transition: width 0.3s ease;
+        }
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+        .auth-buttons button {
+            margin-left: 10px;
+        }
+        .hamburger-menu {
+            display: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--text-dark);
+        }
+        /* Alert Message Bar */
+        #alertMessage {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: var(--success-green);
+            color: white;
+            text-align: center;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            animation: slideInDown 0.5s forwards;
+            font-size: 1.1rem;
+        }
+        #alertMessage.error {
+            background-color: var(--error-red);
+        }
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        /* Hero Section Styles */
+        .hero-section {
+            background-color: var(--background-white);
+            text-align: center;
+            padding: 80px 20px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* Placeholder image, consider generating with orange tint */
+            background-image: url('https://via.placeholder.com/1500x700/FF8C00/FFFFFF?text=HelpNow+-+On-Demand+Services');
+            background-size: cover;
+            background-position: center;
+            color: var(--text-dark);
+            position: relative;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+        .hero-section .container {
+            position: relative;
+            z-index: 2;
+        }
+        .hero-section h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        .hero-section p {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero-search {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            flex-wrap: wrap;
+            /* Allows items to wrap on smaller screens */
+        }
+        .hero-search input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            min-width: 250px;
+            /* Ensure input doesn't get too small */
+        }
+        .hero-search button {
+            white-space: nowrap;
+        }
+        /* General Section Styles */
+        section {
+            padding: 80px 0;
+        }
+        section:nth-of-type(even) {
+            background-color: var(--background-light);
+        }
+        section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+            color: var(--text-dark);
+        }
+        /* Services Section (Wheel Layout) */
+        .services-section {
+            position: relative;
+            overflow: hidden;
+            background-image: url('https://via.placeholder.com/1200x800/FFFFFF/00000000?text=Wheel+Pattern');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .service-wheel {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .service-wheel-item {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 180px;
+            height: 180px;
+            background-color: var(--background-white);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            transform: translate(-50%, -50%) rotate(var(--theta)) translate(320px, 0) rotate(calc(-1 * var(--theta)));
+            overflow: hidden;
+            font-size: 1rem;
+        }
+        .service-wheel-item:nth-child(1) { --theta: 0deg; }
+        .service-wheel-item:nth-child(2) { --theta: 60deg; }
+        .service-wheel-item:nth-child(3) { --theta: 120deg; }
+        .service-wheel-item:nth-child(4) { --theta: 180deg; }
+        .service-wheel-item:nth-child(5) { --theta: 240deg; }
+        .service-wheel-item:nth-child(6) { --theta: 300deg; }
+        .service-wheel-item:hover {
+            transform: translate(-50%, -50%) rotate(var(--theta)) translate(320px, 0) rotate(calc(-1 * var(--theta))) scale(1.1);
+            z-index: 1;
+        }
+        .service-wheel-item .service-icon {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        .service-wheel-item h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .service-wheel-item p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .service-wheel-item .btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .service-wheel-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            font-size: 1.3rem;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        .service-wheel-center:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        .other-services-tabs {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--background-white);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            width: 250px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            margin-top: 15px;
+        }
+        .other-services-tabs.active {
+            display: block;
+        }
+        .tab-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .tab-button:hover {
+            color: var(--primary-color-dark);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-content ul {
+            list-style: none;
+            padding: 0;
+        }
+        .tab-content ul li {
+            padding: 8px 0;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: #555;
+        }
+        .tab-content ul li:hover {
+            color: var(--primary-color);
+        }
+        /* Responsive Design for Service Wheel */
+        @media (max-width: 1024px) {
+            .service-wheel {
+                height: 600px;
+            }
+            .service-wheel-item {
+                width: 140px;
+                height: 140px;
+                transform: translate(-50%, -50%) rotate(var(--theta)) translate(240px, 0) rotate(calc(-1 * var(--theta)));
+            }
+            .service-wheel-center {
+                width: 140px;
+                height: 140px;
+            }
+            .other-services-tabs {
+                width: 200px;
+            }
+        }
+        @media (max-width: 767px) {
+            .service-wheel {
+                height: 400px;
+            }
+            .service-wheel-item {
+                width: 100px;
+                height: 100px;
+                transform: translate(-50%, -50%) rotate(var(--theta)) translate(160px, 0) rotate(calc(-1 * var(--theta)));
+                font-size: 0.85rem;
+            }
+            .service-wheel-item .service-icon {
+                font-size: 2rem;
+            }
+            .service-wheel-item .btn {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+            .service-wheel-center {
+                width: 100px;
+                height: 100px;
+                font-size: 1rem;
+            }
+            .other-services-tabs {
+                width: 150px;
+                font-size: 0.9rem;
+            }
+            .tab-button {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .service-wheel {
+                height: 300px;
+            }
+            .service-wheel-item {
+                width: 80px;
+                height: 80px;
+                transform: translate(-50%, -50%) rotate(var(--theta)) translate(120px, 0) rotate(calc(-1 * var(--theta)));
+                font-size: 0.75rem;
+            }
+            .service-wheel-item .service-icon {
+                font-size: 1.5rem;
+            }
+            .service-wheel-item .btn {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
+            .service-wheel-center {
+                width: 80px;
+                height: 80px;
+                font-size: 0.9rem;
+            }
+            .other-services-tabs {
+                width: 120px;
+                font-size: 0.8rem;
+            }
+            .tab-button {
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
+        }
+        /* Service Order / Problem Description Modal, Login, Signup Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--background-white);
+            margin: auto;
+            padding: 30px;
+            width: 90%;
+            /* Responsive width */
+            max-width: 500px;
+            position: relative;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .modal-content label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .modal-content input[type="text"],
+        .modal-content input[type="email"],
+        .modal-content input[type="password"],
+        .modal-content input[type="tel"],
+        .modal-content textarea {
+            width: calc(100% - 20px);
+            /* Adjust for padding in inputs */
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .modal-content textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .modal-buttons {
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            /* Use flexbox for button alignment */
+            flex-wrap: wrap;
+            /* Allow buttons to wrap */
+            justify-content: center;
+            gap: 10px;
+            /* Space between buttons */
+        }
+        .modal-buttons button {
+            flex-basis: auto;
+            /* Allow buttons to size naturally */
+            max-width: 100%;
+            /* Prevent overflow on small screens */
+        }
+        /* How It Works Section */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        .step-card {
+            text-align: center;
+            padding: 30px;
+            background-color: var(--background-light);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .step-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .step-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        .step-card p {
+            color: #666666;
+        }
+        /* Payments Page Section (Initially Hidden) */
+        #payment-page {
+            display: none;
+            padding: 80px 20px;
+            text-align: center;
+            background-color: var(--background-white);
+        }
+        #payment-page h2 {
+            margin-bottom: 40px;
+        }
+        .payment-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .payment-method-card {
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .payment-method-card:hover {
+            background-color: #EFEFEF;
+            border-color: var(--primary-color);
+        }
+        .payment-method-card i {
+            font-size: 2.5rem;
+            color: var(--text-dark);
+        }
+        .payment-method-card h4 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin: 0;
+        }
+        .payment-instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--background-light);
+            border-radius: 8px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+        .payment-instructions h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .payment-instructions p {
+            margin-bottom: 10px;
+        }
+        .payment-instructions ul {
+            list-style: decimal;
+            padding-left: 20px;
+        }
+        .payment-instructions ul li {
+            margin-bottom: 8px;
+        }
+        .payment-instructions .btn-primary {
+            margin-top: 20px;
+            display: inline-block;
+        }
+        /* Map Navigation Section (Initially Hidden) */
+        #map-navigation-page {
+            display: none;
+            padding: 80px 20px;
+            text-align: center;
+            background-color: var(--background-white);
+        }
+        #map-navigation-page h2 {
+            margin-bottom: 40px;
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        #map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            border-radius: 8px;
+            display: none;
+            transition: opacity 0.3s ease;
+        }
+        .map-info {
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--background-light);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .map-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .map-info p {
+            margin-bottom: 10px;
+        }
+        .map-controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            /* Allow controls to wrap */
+        }
+        /* Available Providers Section */
+        #available-providers-page {
+            display: none;
+            padding: 80px 20px;
+            text-align: center;
+            background-color: var(--background-white);
+        }
+        #available-providers-page h2 {
+            margin-bottom: 40px;
+        }
+        .provider-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .provider-card {
+            background-color: var(--background-white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .provider-card h3 {
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .provider-card p {
+            color: #666666;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .provider-card .distance {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .provider-card .cost {
+            font-weight: 700;
+            color: var(--success-green);
+            font-size: 1.1rem;
+        }
+        .provider-card .btn-primary {
+            width: 100%;
+            margin-top: 15px;
+        }
+        /* Become a Provider Section (New) */
+        #become-a-provider-page {
+            display: none;
+            padding: 80px 20px;
+            text-align: center;
+            background-color: var(--background-light);
+        }
+        #become-a-provider-page h2 {
+            margin-bottom: 40px;
+        }
+        #provider-onboarding-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--background-white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+        #provider-onboarding-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        #provider-onboarding-form input[type="text"],
+        #provider-onboarding-form input[type="email"],
+        #provider-onboarding-form input[type="tel"],
+        #provider-onboarding-form select,
+        #provider-onboarding-form textarea {
+            width: 100%;
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        #provider-onboarding-form textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        #provider-onboarding-form .commission-info {
+            background-color: var(--info-blue);
+            border: 1px solid var(--info-blue-border);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
+        #provider-onboarding-form .commission-info strong {
+            color: var(--info-blue-border);
+        }
+        #provider-onboarding-form button {
+            width: auto;
+            padding: 12px 30px;
+            margin-top: 10px;
+        }
+        /* Contact Section (NEW) */
+        #contact {
+            background-color: var(--background-white);
+            padding: 80px 20px;
+            text-align: center;
+        }
+        #contact .contact-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        #contact .contact-info {
+            flex: 1;
+            min-width: 280px;
+            text-align: left;
+        }
+        #contact .contact-info h3 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        #contact .contact-info p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+            color: #555;
+        }
+        #contact .contact-info p i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        #contact .social-icons {
+            margin-top: 20px;
+        }
+        #contact .social-icons a {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-right: 15px;
+            transition: color 0.3s ease;
+        }
+        #contact .social-icons a:hover {
+            color: var(--primary-color-dark);
+        }
+        #contact .contact-form {
+            flex: 1.5;
+            /* Larger share for the form */
+            min-width: 300px;
+            background-color: var(--background-light);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+        #contact .contact-form h3 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #contact .contact-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        #contact .contact-form input[type="text"],
+        #contact .contact-form input[type="email"],
+        #contact .contact-form textarea {
+            width: 100%;
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        #contact .contact-form textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        #contact .contact-form button {
+            width: auto;
+            padding: 12px 30px;
+            margin-top: 10px;
+        }
+        /* CTA Section */
+        .cta-section {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-buttons button {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo">
+                <a href="#">HelpNow</a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#payment-page">Payments</a></li>
+                    <li><a href="#map-navigation-page">Map & Track</a></li>
+                    <li><a href="#become-a-provider-page">Become a Provider</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="btn-secondary" onclick="openModal('loginModal')">Login</button>
+                <button class="btn-primary" onclick="openModal('signupModal')">Sign Up</button>
+            </div>
+            <div class="hamburger-menu"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <!-- Alert Message Bar -->
+    <div id="alertMessage"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1>Your Instant Lifeline in Uganda</h1>
+            <p>Get immediate access to Ambulances, Mechanics, Breakdown services, Plumbers, Electricians, and more, right when you need them.</p>
+            <div class="hero-search">
+                <input type="text" placeholder="Get Current Location">
+                <button class="btn-primary">Search Services</button>
+            </div>
+            <button class="btn-emergency">Call Emergency</button>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services-section">
+        <div class="container">
+            <h2>Our Services</h2>
+            <div class="service-wheel">
+                <div class="service-wheel-item" style="--theta: 0deg;">
+                    <i class="fas fa-ambulance service-icon"></i>
+                    <h3>Ambulance</h3>
+                    <p>Rapid medical aid</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-item" style="--theta: 60deg;">
+                    <i class="fas fa-tools service-icon"></i>
+                    <h3>Breakdown Service</h3>
+                    <p>Roadside help</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-item" style="--theta: 120deg;">
+                    <i class="fas fa-wrench service-icon"></i>
+                    <h3>Mechanic</h3>
+                    <p>Vehicle repairs</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-item" style="--theta: 180deg;">
+                    <i class="fas fa-fire-extinguisher service-icon"></i>
+                    <h3>Fire Services</h3>
+                    <p>Firefighting aid</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-item" style="--theta: 240deg;">
+                    <i class="fas fa-wrench service-icon"></i>
+                    <h3>Plumber</h3>
+                    <p>Plumbing fixes</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-item" style="--theta: 300deg;">
+                    <i class="fas fa-lightbulb service-icon"></i>
+                    <h3>Electrician</h3>
+                    <p>Electrical work</p>
+                    <button class="btn-primary" onclick="openModal('serviceRequestModal')">Order</button>
+                </div>
+                <div class="service-wheel-center" onclick="toggleOtherServicesTabs()">
+                    <h3>Other Services</h3>
+                    <div class="other-services-tabs" id="otherServicesTabs">
+                        <div class="tab-buttons">
+                            <button class="tab-button active" onclick="openTab('emergency')">Emergency</button>
+                            <button class="tab-button" onclick="openTab('home')">Home</button>
+                            <button class="tab-button" onclick="openTab('vehicle')">Vehicle</button>
+                        </div>
+                        <div class="tab-content active" id="emergency-tab">
+                            <ul>
+                                <li onclick="openModal('serviceRequestModal')">Locksmith</li>
+                                <li onclick="openModal('serviceRequestModal')">Private Security</li>
+                            </ul>
+                        </div>
+                        <div class="tab-content" id="home-tab">
+                            <ul>
+                                <li onclick="openModal('serviceRequestModal')">Pest Control</li>
+                                <li onclick="openModal('serviceRequestModal')">Handyman</li>
+                                <li onclick="openModal('serviceRequestModal')">Gardener</li>
+                            </ul>
+                        </div>
+                        <div class="tab-content" id="vehicle-tab">
+                            <ul>
+                                <li onclick="openModal('serviceRequestModal')">Towing Service</li>
+                                <li onclick="openModal('serviceRequestModal')">Fuel Delivery</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Order / Problem Description Modal -->
+    <div id="serviceRequestModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('serviceRequestModal')">×</span>
+            <h3>Request</h3>
+            <label for="location">Your Location:</label>
+            <input type="text" id="location" placeholder="Use Current Location">
+            <label for="problem">Briefly describe your problem:</label>
+            <textarea id="problem" placeholder="Enter details..."></textarea>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="findProviders()">Find Providers</button>
+                <button class="btn-secondary" onclick="closeModal('serviceRequestModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('loginModal')">×</span>
+            <h3>Login to HelpNow</h3>
+            <label for="loginEmail">Email or Phone:</label>
+            <input type="text" id="loginEmail" placeholder="Enter email or phone">
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" placeholder="Enter password">
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="login()">Login</button>
+                <button class="btn-secondary" onclick="closeModal('loginModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('signupModal')">×</span>
+            <h3>Sign Up for HelpNow</h3>
+            <label for="signupName">Full Name:</label>
+            <input type="text" id="signupName" placeholder="Enter full name">
+            <label for="signupEmail">Email or Phone:</label>
+            <input type="text" id="signupEmail" placeholder="Enter email or phone">
+            <label for="signupPassword">Password:</label>
+            <input type="password" id="signupPassword" placeholder="Enter password">
+            <label for="confirmPassword">Confirm Password:</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm password">
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="signup()">Sign Up</button>
+                <button class="btn-secondary" onclick="closeModal('signupModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Request Service</h3>
+                    <p>Choose the emergency or basic service you need or search for it.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Provide Details</h3>
+                    <p>Enter your precise location and a brief description of your issue.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Get Matched</h3>
+                    <p>See available providers, their estimated arrival, and service charges.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h3>Track & Pay</h3>
+                    <p>Confirm your request, make payment, and track the provider's arrival in real-time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Available Providers Section -->
+    <section id="available-providers-page">
+        <div class="container">
+            <h2>Available Providers for</h2>
+            <p>Near: <span id="providerLocation">Loading Location...</span></p>
+            <div class="provider-list">
+                <div class="provider-card">
+                    <h3>Loading Providers...</h3>
+                    <p>Distance: <span class="distance">--</span></p>
+                    <p>Estimated Cost: <span class="cost">--</span></p>
+                    <button class="btn-primary">Select Provider</button>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="showSection('services')">Back to Services</button>
+        </div>
+    </section>
+
+    <!-- Payments Page Section -->
+    <section id="payment-page">
+        <div class="container">
+            <h2>Choose Your Payment Method</h2>
+            <div class="payment-options">
+                <div class="payment-method-card">
+                    <i class="fab fa-mtn"></i>
+                    <h4>MTN MoMo</h4>
+                </div>
+                <div class="payment-method-card">
+                    <i class="fab fa-airtel"></i>
+                    <h4>Airtel Money</h4>
+                </div>
+                <div class="payment-method-card">
+                    <i class="far fa-credit-card"></i>
+                    <h4>Credit/Debit Card</h4>
+                </div>
+                <div class="payment-method-card">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h4>Cash on Delivery</h4>
+                </div>
+            </div>
+            <div class="payment-instructions">
+                <h3>Instructions</h3>
+                <p>Select a payment method above to see instructions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Navigation Section -->
+    <section id="map-navigation-page">
+        <div class="container">
+            <h2>Track Your Service Provider</h2>
+            <div id="map">
+                <div id="map-overlay">Loading map and tracking provider...</div>
+            </div>
+            <div class="map-info">
+                <p>Awaiting Provider Assignment...</p>
+                <p>Estimated Time of Arrival: <span id="eta">Calculating...</span></p>
+                <p>Provider: <span id="providerName">N/A</span></p>
+                <p>Service: <span id="serviceType">N/A</span> | Problem: <span id="problemDesc">N/A</span></p>
+                <p>Cost: <span id="cost">N/A</span></p>
+                <div class="map-controls">
+                    <button class="btn-primary" onclick="callProvider()">Call Provider</button>
+                    <button class="btn-secondary" onclick="cancelRequest()">Cancel Request</button>
+                    <button class="btn-primary" onclick="showSection('payment-page')">Proceed to Payment</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Become a Provider Section -->
+    <section id="become-a-provider-page">
+        <div class="container">
+            <h2>Join Our Network of Service Providers</h2>
+            <p>Are you a skilled professional looking for more opportunities? Join our platform and connect with clients in need of your services across Uganda.</p>
+            <form id="provider-onboarding-form">
+                <label for="providerName">Your Full Name:</label>
+                <input type="text" id="providerName" placeholder="Enter full name">
+                <label for="providerEmail">Your Email:</label>
+                <input type="email" id="providerEmail" placeholder="Enter email">
+                <label for="providerPhone">Your Phone Number (e.g., +2567XXXXXXXX):</label>
+                <input type="tel" id="providerPhone" placeholder="Enter phone number">
+                <label for="providerService">Service You Provide:</label>
+                <select id="providerService">
+                    <option value="">-- Select a Service --</option>
+                    <option value="Ambulance Driver/Medic">Ambulance Driver/Medic</option>
+                    <option value="Breakdown Service Driver">Breakdown Service Driver</option>
+                    <option value="Mechanic">Mechanic</option>
+                    <option value="Fire Fighter">Fire Fighter</option>
+                    <option value="Locksmith">Locksmith</option>
+                    <option value="Plumber">Plumber</option>
+                    <option value="Electrician">Electrician</option>
+                    <option value="Pest Control Specialist">Pest Control Specialist</option>
+                    <option value="Handyman">Handyman</option>
+                    <option value="Security Systems Technician">Security Systems Technician</option>
+                    <option value="Waste Management Personnel">Waste Management Personnel</option>
+                    <option value="Gardener">Gardener</option>
+                    <option value="Towing Service Driver">Towing Service Driver</option>
+                    <option value="Fuel Delivery Driver">Fuel Delivery Driver</option>
+                    <option value="Private Security Guard">Private Security Guard</option>
+                    <option value="Other">Other (Please specify below)</option>
+                </select>
+                <label for="providerExpertise">Briefly describe your expertise and tools/equipment:</label>
+                <textarea id="providerExpertise" placeholder="Enter details..."></textarea>
+                <div class="commission-info">
+                    <p><strong>Commission Information for Providers</strong></p>
+                    <p>For every successful service completed through the platform, a 15% commission will be applied to the total service charge.</p>
+                    <p>For Cash Payments: You will collect the full service fee from the client directly. The platform commission (15%) for cash payments will be debited from your registered mobile money account (MTN MoMo/Airtel Money) at the end of each day/week, or you will be required to remit it directly via mobile money transfer to the platform's designated account.</p>
+                    <p>For Digital Payments (MoMo, Airtel Money, Card): The commission will be automatically deducted from the service fee before the remaining amount is paid out to your registered mobile money account.</p>
+                    <p>Detailed payment statements and reconciliation will be available in your provider dashboard (coming soon!).</p>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-primary" type="submit">Submit Application</button>
+                    <button class="btn-secondary" type="button" onclick="closeSection('become-a-provider-page')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>Contact Information</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> Plot 123, Sample Street, Kampala, Central Region, Uganda</p>
+                    <p><i class="fas fa-phone"></i> +256 (0) 7X XXX XXXX (General Inquiries)</p>
+                    <p><i class="fas fa-phone"></i> +256 (0) 7X YYY YYYY (Technical Support)</p>
+                    <p><i class="fas fa-envelope"></i> info@helpnow.ug</p>
+                    <p><i class="far fa-clock"></i> Mon - Fri: 9:00 AM - 5:00 PM (EAT)</p>
+                    <div class="social-icons">
+                        <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <h3>Send Us a Message</h3>
+                    <form>
+                        <label for="contactName">Your Name:</label>
+                        <input type="text" id="contactName" placeholder="Enter your name">
+                        <label for="contactEmail">Your Email:</label>
+                        <input type="email" id="contactEmail" placeholder="Enter your email">
+                        <label for="contactSubject">Subject:</label>
+                        <input type="text" id="contactSubject" placeholder="Enter subject">
+                        <label for="contactMessage">Your Message:</label>
+                        <textarea id="contactMessage" placeholder="Enter your message..."></textarea>
+                        <button class="btn-primary" type="submit">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Download Our App Today!</h2>
+            <p>Get instant access to all services at your fingertips. Available on Android and iOS.</p>
+            <div class="cta-buttons">
+                <button class="btn-secondary">Get on Google Play</button>
+                <button class="btn-secondary">Download on the App Store</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <h3>HelpNow</h3>
+                    <p>Your trusted partner for immediate support and services in Uganda.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="#payment-page">Payments</a></li>
+                        <li><a href="#map-navigation-page">Map & Track</a></li>
+                        <li><a href="#become-a-provider-page">Become a Provider</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact Us</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Kampala, Central Region, Uganda</p>
+                    <p><i class="fas fa-envelope"></i> info@helpnow.ug</p>
+                    <p><i class="fas fa-phone"></i> +256 (0) 7X XXXXXXX</p>
+                </div>
+                <div class="footer-social">
+                    <h4>Follow Us</h4>
+                    <div class="social-icons">
+                        <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 HelpNow. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "flex";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        // Section Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('section').forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        // Dynamic Other Services Tabs Toggle
+        function toggleOtherServicesTabs() {
+            const tabs = document.getElementById('otherServicesTabs');
+            tabs.classList.toggle('active');
+        }
+
+        // Tab Switching
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            buttons.forEach(button => button.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+            document.querySelector(`.tab-button[onclick="openTab('${tabName}')"]`).classList.add('active');
+        }
+
+        // Close tabs when clicking outside
+        document.addEventListener('click', function(event) {
+            const center = document.querySelector('.service-wheel-center');
+            const tabs = document.getElementById('otherServicesTabs');
+            if (!center.contains(event.target) && !tabs.contains(event.target)) {
+                tabs.classList.remove('active');
+            }
+        });
+
+        // Placeholder Functions (to be implemented with backend logic)
+        function findProviders() {
+            alert("Finding providers... (Backend integration needed)");
+            closeModal('serviceRequestModal');
+            showSection('available-providers-page');
+        }
+
+        function login() {
+            alert("Login attempted... (Backend integration needed)");
+            closeModal('loginModal');
+        }
+
+        function signup() {
+            alert("Signup attempted... (Backend integration needed)");
+            closeModal('signupModal');
+        }
+
+        function callProvider() {
+            alert("Calling provider... (Backend integration needed)");
+        }
+
+        function cancelRequest() {
+            alert("Request cancelled... (Backend integration needed)");
+            showSection('services');
+        }
+    </script>
+</body>
+
+</html>
